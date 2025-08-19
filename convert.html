@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Currency Converter</title>
+  <style>
+    body{
+        font-family:sans-serif;
+        display:flex;
+        justify-content:center;
+        align-items:center;
+        height:100vh;
+        background:#f4f4f9;
+        
+        
+    }
+    .box{
+        background:#999c0a;
+        padding:20px;
+        border-radius:10px;
+        box-shadow:0 4px 10px rgba(0,0,0,.1);
+    }
+    input,select,button{
+        padding:8px;
+        margin:5px;
+        border-radius:5px;
+        border:1px solid #ccc;
+    }
+    button{
+        background:#0cda16;
+        color:#fff;
+        border:none;
+        cursor:pointer;
+    }
+.chandan{
+  width: 50vh;
+  height: 20vh;
+  background-image: url(" https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSUdvtQxcvJI3-59X6mlcONEdxR0apYAXkXNw&s ");
+}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2 class="chandan">Currency Converter</h2>
+    <input type="number" id="amount" placeholder="Amount" value="1">
+    <select id="from"></select>
+    <select id="to"></select>
+    <button onclick="convert()">Convert</button>
+    <p id="result"></p>
+  </div>
+
+<script>
+const from=document.getElementById("from"),
+      to=document.getElementById("to"),
+      result=document.getElementById("result");
+
+// Load currency list
+fetch("https://api.frankfurter.app/currencies")
+.then(r=>r.json())
+.then(data=>{
+  let opts=Object.keys(data);
+  opts.forEach(c=>{
+    from.innerHTML+=`<option>${c}</option>`;
+    to.innerHTML+=`<option>${c}</option>`;
+  });
+  from.value="USD"; to.value="INR";
+});
+
+function convert(){
+  let amt=document.getElementById("amount").value;
+  if(from.value===to.value){result.innerText="Same Currency";return;}
+  fetch(`https://api.frankfurter.app/latest?amount=${amt}&from=${from.value}&to=${to.value}`)
+  .then(r=>r.json())
+  .then(d=>{
+    result.innerText=`${amt} ${from.value} = ${d.rates[to.value]} ${to.value}`;
+  });
+}
+</script>
+</body>
+</html>
