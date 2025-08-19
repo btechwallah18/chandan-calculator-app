@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Calculator • Bootstrap + Vanilla JS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    :root {
+      --radius: 1.25rem;
+    }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      background: #0f172a; /* slate-900 */
+      color: #0b1220;
+    }
+    .calc-card {
+      width: min(440px, 92vw);
+      border: none;
+      border-radius: var(--radius);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      overflow: hidden;
+    }
+    .screen {
+      background: linear-gradient(135deg, #0ea5e9 0%, #22d3ee 100%);
+      padding: 1rem 1.25rem;
+      color: #001018;
+    }
+    .screen small {
+      opacity: .8;
+    }
+    .display {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: clamp(2rem, 6vw, 2.75rem);
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-align: right;
+      width: 100%;
+      background: transparent;
+      border: 0;
+      color: #001018;
+    }
+    .keys {
+      background: #0b1220;
+      padding: 1rem;
+    }
+    .btn-key {
+      border-radius: .9rem !important;
+      font-size: 1.15rem;
+      padding: .9rem .5rem;
+      border: 0 !important;
+    }
+    .btn-op {
+      background: #1f2937; /* gray-800 */
+      color: #e5e7eb;
+    }
+    .btn-op:hover { background: #374151; }
+    .btn-fn {
+      background: #111827; /* gray-900 */
+      color: #e5e7eb;
+    }
+    .btn-fn:hover { background: #1f2937; }
+    .btn-eq { background: #06b6d4; color: #001018; font-weight: 700; }
+    .btn-eq:hover { background: #0891b2; }
+
+    .history {
+      max-height: 140px;
+      overflow: auto;
+      scrollbar-width: thin;
+    }
+    .history li { font-family: ui-monospace, Menlo, Monaco, Consolas, "Courier New", monospace; }
+  </style>
+</head>
+<body>
+  <main class="card calc-card">
+    <!-- Screen / History -->
+    <div class="screen">
+      <div class="d-flex justify-content-between align-items-start mb-1">
+        <small class="fw-semibold"> CHANDAN CALCULATOR</small>
+        <button id="btnTheme" class="btn btn-sm btn-outline-dark rounded-pill px-3" aria-label="Toggle theme">Theme</button>
+      </div>
+      <div class="d-flex gap-3">
+        <div class="flex-grow-1">
+          <input id="display" class="display" type="text" value="0" aria-label="Calculator display" readonly />
+          <div id="subDisplay" class="text-end small">&nbsp;</div>
+        </div>
+        <ul id="history" class="history list-unstyled mb-0 ps-2 border-start border-2 border-dark-subtle d-none d-md-block"></ul>
+      </div>
+    </div>
+
+    <!-- Keys -->
+    <div class="keys">
+      <div class="row g-2">
+        <div class="col-3"><button class="btn btn-fn btn-key w-100" data-action="clear" aria-label="Clear">AC</button></div>
+        <div class="col-3"><button class="btn btn-fn btn-key w-100" data-action="negate" aria-label="Toggle sign">±</button></div>
+        <div class="col-3"><button class="btn btn-fn btn-key w-100" data-action="percent" aria-label="Percent">%</button></div>
+        <div class="col-3"><button class="btn btn-op btn-key w-100" data-op="/" aria-label="Divide">÷</button></div>
+
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="7">7</button></div>
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="8">8</button></div>
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="9">9</button></div>
+        <div class="col-3"><button class="btn btn-op btn-key w-100" data-op="*" aria-label="Multiply">×</button></div>
+
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="4">4</button></div>
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="5">5</button></div>
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="6">6</button></div>
+        <div class="col-3"><button class="btn btn-op btn-key w-100" data-op="-" aria-label="Subtract">−</button></div>
+
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="1">1</button></div>
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="2">2</button></div>
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="3">3</button></div>
+        <div class="col-3"><button class="btn btn-op btn-key w-100" data-op="+" aria-label="Add">+</button></div>
+
+        <div class="col-6"><button class="btn btn-secondary btn-key w-100" data-num="0">0</button></div>
+        <div class="col-3"><button class="btn btn-secondary btn-key w-100" data-num="." aria-label="Decimal">.</button></div>
+        <div class="col-3"><button class="btn btn-eq btn-key w-100" data-action="equals" aria-label="Equals">=</button></div>
+
+        <div class="col-12 mt-2"><button class="btn btn-fn btn-key w-100" data-action="backspace" aria-label="Delete last">⌫</button></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // --- Calculator Logic ---
+    const display = document.getElementById('display');
+    const subDisplay = document.getElementById('subDisplay');
+    const historyEl = document.getElementById('history');
+
+    let current = '0';
+    let previous = null;
+    let operation = null;
+    const history = [];
+
+    const MAX_LEN = 16;
+
+    function format(n) {
+      // Avoid scientific notation for typical range; limit length
+      const s = n.toString();
+      if (s.length <= MAX_LEN) return s;
+      return Number(n).toExponential(8).replace('+', '');
+    }
+
+    function updateDisplay() {
+      display.value = current;
+      subDisplay.textContent = previous !== null && operation ? `${format(previous)} ${opSymbol(operation)}` : '\u00A0';
+    }
+
+    function opSymbol(op) {
+      return op === '*' ? '×' : op === '/' ? '÷' : op;
+    }
+
+    function appendNumber(num) {
+      if (current.length >= MAX_LEN) return;
+      if (num === '.' && current.includes('.')) return;
+      if (current === '0' && num !== '.') current = num; else current += num;
+      updateDisplay();
+    }
+
+    function setOperation(op) {
+      if (operation && previous !== null) {
+        // chain operations
+        compute();
+      }
+      operation = op;
+      previous = parseFloat(current);
+      current = '0';
+      updateDisplay();
+    }
+
+    function clearAll() {
+      current = '0';
+      previous = null;
+      operation = null;
+      updateDisplay();
+    }
+
+    function backspace() {
+      if (current.length <= 1) current = '0';
+      else current = current.slice(0, -1);
+      updateDisplay();
+    }
+
+    function negate() {
+      if (current === '0') return;
+      if (current.startsWith('-')) current = current.slice(1); else current = '-' + current;
+      updateDisplay();
+    }
+
+    function percent() {
+      const n = parseFloat(current);
+      if (!isFinite(n)) return;
+      current = format(n / 100);
+      updateDisplay();
+    }
+
+    function compute() {
+      if (operation === null || previous === null) return;
+      const a = previous;
+      const b = parseFloat(current);
+      let result;
+      switch (operation) {
+        case '+': result = a + b; break;
+        case '-': result = a - b; break;
+        case '*': result = a * b; break;
+        case '/': result = b === 0 ? NaN : a / b; break;
+        default: return;
+      }
+      const expr = `${format(a)} ${opSymbol(operation)} ${format(b)} = ${format(result)}`;
+      pushHistory(expr);
+      current = (isFinite(result) && !isNaN(result)) ? format(result) : 'Error';
+      previous = null;
+      operation = null;
+      updateDisplay();
+    }
+
+    function pushHistory(line) {
+      history.unshift(line);
+      if (history.length > 10) history.pop();
+      renderHistory();
+    }
+
+    function renderHistory() {
+      if (!historyEl) return;
+      historyEl.innerHTML = history.map(item => `<li class="small text-dark-emphasis">${item}</li>`).join('');
+    }
+
+    // Button handlers
+    document.addEventListener('click', (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const num = btn.getAttribute('data-num');
+      const op = btn.getAttribute('data-op');
+      const action = btn.getAttribute('data-action');
+
+      if (num !== null) return appendNumber(num);
+      if (op) return setOperation(op);
+      if (action === 'equals') return compute();
+      if (action === 'clear') return clearAll();
+      if (action === 'backspace') return backspace();
+      if (action === 'negate') return negate();
+      if (action === 'percent') return percent();
+    });
+
+    // Keyboard support
+    document.addEventListener('keydown', (e) => {
+      const key = e.key;
+      if (/^[0-9]$/.test(key)) return appendNumber(key);
+      if (key === '.') return appendNumber('.');
+      if (['+', '-', '*', '/'].includes(key)) return setOperation(key);
+      if (key === 'Enter' || key === '=') { e.preventDefault(); return compute(); }
+      if (key === 'Backspace') return backspace();
+      if (key === 'Escape') return clearAll();
+      if (key.toLowerCase() === 'p' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); percent(); }
+    });
+
+    // Theme toggle (light/dark)
+    const btnTheme = document.getElementById('btnTheme');
+    let dark = true;
+    btnTheme.addEventListener('click', () => {
+      dark = !dark;
+      document.body.style.background = dark ? '#0f172a' : '#e5e7eb';
+    });
+
+    updateDisplay();
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
